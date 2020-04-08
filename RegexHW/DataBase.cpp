@@ -42,50 +42,47 @@ void DataBase::ListNamedSection(std::string section)
 
 void DataBase::ListSubsections(std::string section)
 {
-	auto it = sectionToSubSectionMultiMap.find(section);
+	auto it = sectionToSubSectionMultiMap.equal_range(section);
 	std::cout << "Available Subsections for the specified section:" << std::endl;
-	while(it != sectionToSubSectionMultiMap.end()) 
+	for (auto iter = it.first; iter != it.second; iter++) 
 	{
-		std::cout << it->second << std::endl;
-		it++;
+		std::cout << iter->second << std::endl;
 	}
 	std::cout << "END" << std::endl;
 }
 
 void DataBase::ListKeyValuePairsInSection(std::string section)
 {
-	auto it = sectionToKeyValuePairMultiMap.find(section);
+	auto finder = sectionToKeyValuePairMultiMap.equal_range(section);
 	std::cout << "Available key=value pairs for the specified section:" << std::endl;
-	while (it != sectionToKeyValuePairMultiMap.end())
+	for (auto iter = finder.first; iter != finder.second; iter++)
 	{
-		auto& data = it->second;
-		if(data.isArray) 
+		auto& data = iter->second;
+		if (data.isArray)
 		{
 			std::cout << data.key << "={" << data.value << "}" << std::endl;
 		}
-		else 
+		else
 		{
 			std::cout << data.key << "=" << data.value << std::endl;
 		}
-		it++;
 	}
 	std::cout << "END" << std::endl;
 }
 
 void DataBase::GetEntry(std::string section, std::string key)
 {
-	auto it = sectionToKeyValuePairMultiMap.find(section);
+	auto finder = sectionToKeyValuePairMultiMap.equal_range(section);
 	bool bFoundEntry = false;
 	DB_Data foundData = {};
-	while (it != sectionToKeyValuePairMultiMap.end())
+	for (auto iter = finder.first; iter != finder.second; iter++)
 	{
-		if(it->second.key == key) 
+		if (iter->second.key == key)
 		{
 			bFoundEntry = true;
-			foundData = it->second;
+			foundData = iter->second;
 			break;
 		}
-		it++;
 	}
 	if(bFoundEntry) 
 	{
@@ -94,7 +91,7 @@ void DataBase::GetEntry(std::string section, std::string key)
 			std::cout << "The last entry has been unloaded" << std::endl;
 		}
 		lastKeyValuePair = foundData;
-		std::cout << "Entry has been found and is loaded in" << std::endl;
+		std::cout << "Entry has been found and is loaded in. What would you like to do with it:\nGetKey?\nGetValue?\nGetType?" << std::endl;
 		return;
 	}
 	std::cout << "This query didn't have any valid response" << std::endl;
@@ -119,10 +116,10 @@ void DataBase::GetType()
 {
 	if (lastKeyValuePair.isArray)
 	{
-		std::cout << "Type: Array of " << DataTypeToString(lastKeyValuePair.dbType) << "}" << std::endl;
+		std::cout << "Type: Array of " << DataTypeToString(lastKeyValuePair.dbType) << std::endl;
 		return;
 	}
-	std::cout << "Type: " << DataTypeToString(lastKeyValuePair.dbType) << "}" << std::endl;
+	std::cout << "Type: " << DataTypeToString(lastKeyValuePair.dbType) << std::endl;
 }
 
 void DataBase::AddSection(std::string section)
@@ -140,23 +137,32 @@ void DataBase::AddSection(std::string section)
 
 void DataBase::AddSubSection(std::string subsection, std::string section)
 {
-	auto iter = sectionToSubSectionMultiMap.find(section);
-	while(iter != sectionToSubSectionMultiMap.end()) 
+	auto finder = sectionToSubSectionMultiMap.equal_range(section);
+	for (auto iter = finder.first; iter != finder.second; iter++)
 	{
-		// validating for copies
-		if(iter->second == subsection) 
+		if (iter->second == subsection)
 		{
 			return;
 		}
-		iter++;
 	}
 	sectionToSubSectionMultiMap.insert({section, subsection});
 }
 
-void DataBase::AddKeyValuePair(std::string key, std::string value, DATA_CONFIG_TYPE valueType, bool isArray, std::string section)
+void DataBase::AddKeyValuePair(std::string key, std::string value, DATA_CONFIG_TYPE valueType, bool isArray, std::string section, std::string subsection)
 {
 	// validate for copies
-	auto iterpair = sectionToKeyValuePairMultiMap.equal_range(section);
+	std::string query;
+
+	if(subsection != "") 
+	{
+		query = section + ":" + subsection;
+	}
+	else 
+	{
+		query = section;
+	}
+
+	auto iterpair = sectionToKeyValuePairMultiMap.equal_range(query);
 	auto it = iterpair.first;
 	
 	for(; it != iterpair.second; it++) 
@@ -174,5 +180,12 @@ void DataBase::AddKeyValuePair(std::string key, std::string value, DATA_CONFIG_T
 	data.value = value;
 	data.dbType = valueType;
 	data.isArray = isArray;
+
+	if(subsection != "") 
+	{
+		// use both section and subsection to hash 
+		sectionToKeyValuePairMultiMap.insert({section + ":" + subsection, data});
+		return;
+	}
 	sectionToKeyValuePairMultiMap.insert({section, data});
 }

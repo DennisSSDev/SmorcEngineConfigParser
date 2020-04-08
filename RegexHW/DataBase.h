@@ -32,7 +32,7 @@ public:
 
 	void AddSubSection(std::string subsection, std::string section);
 
-	void AddKeyValuePair(std::string key, std::string value, DATA_CONFIG_TYPE valueType, bool isArray, std::string section);
+	void AddKeyValuePair(std::string key, std::string value, DATA_CONFIG_TYPE valueType, bool isArray, std::string section, std::string subsection);
 
 private:
 	std::vector<std::string> sectionsList;

@@ -324,9 +324,8 @@ int main()
 								{
 									continue;
 								}
-								std::string finalSection = lastSection == "" ? lastSubsection : lastSection;
 								std::string finalValue = "\"" + match;
-								db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::STRING_T, false, finalSection);
+								db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::STRING_T, false, lastSection, lastSubsection);
 								continue;
 							}
 							consoleManager->PrintConsoleMessage
@@ -368,10 +367,9 @@ int main()
 						{
 							continue;
 						}
-						std::string finalSection = lastSection == "" ? lastSubsection : lastSection;
 						std::string finalValue = matches.str(0);
 						finalValue = finalValue.substr(1);
-						db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::BOOLEAN_T, false, finalSection);
+						db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::BOOLEAN_T, false, lastSection, lastSubsection);
 						continue;
 					}
 					// check if this a floating point number
@@ -383,10 +381,9 @@ int main()
 						{
 							continue;
 						}
-						std::string finalSection = lastSection == "" ? lastSubsection : lastSection;
 						std::string finalValue = matches.str(0);
 						finalValue = finalValue.substr(1);
-						db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::FLOAT_T, false, finalSection);
+						db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::FLOAT_T, false, lastSection, lastSubsection);
 						continue;
 					}
 					// check if this is a int
@@ -398,10 +395,9 @@ int main()
 						{
 							continue;
 						}
-						std::string finalSection = lastSection == "" ? lastSubsection : lastSection;
 						std::string finalValue = matches.str(0);
 						finalValue = finalValue.substr(1);
-						db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::INT_T, false, finalSection);
+						db->AddKeyValuePair(key, finalValue, DATA_CONFIG_TYPE::INT_T, false, lastSubsection, lastSection);
 						continue;
 					}
 					// check if this is an array
@@ -482,8 +478,7 @@ int main()
 						{
 							continue;
 						}
-						std::string finalSection = lastSection == "" ? lastSubsection : lastSection;
-						db->AddKeyValuePair(key, arrayString, initialType, true, finalSection);
+						db->AddKeyValuePair(key, arrayString, initialType, true, lastSection, lastSubsection);
 						continue;
 					}
 
@@ -554,7 +549,7 @@ int main()
 		SetConsoleTextAttribute(hConsole, CONSOLE_COLOR_DEFAULT);
 		std::cout << std::endl;
 		std::cout << "Parsing is done! DB is up! Commands available: \n\nListAllSections" << 
-			"\nListNamedSection\nListSubsections\nListKeyValuePairsInSection\nGetEntry\nGetKey\nGetValue\nGetType\n" << 
+			"\nListNamedSection sectionName\nListSubsections sectionName\nListKeyValuePairsInSection section/section:subsection\nGetEntry section/section:subsection,key\nGetKey\nGetValue\nGetType\n" << 
 			std::endl;
 		std::cout << "Please Enter Command: ";
 		std::string input;
@@ -568,15 +563,53 @@ int main()
 				SetConsoleTextAttribute(hConsole, CONSOLE_COLOR_DEFAULT);
 				break;
 			}
-
-			if (std::regex_search(input, matched, std::regex("ListAllSections")))
+			input.erase(std::remove_if(input.begin(), input.end(), isspace), input.end());
+			if (std::regex_search(input, matched, std::regex("ListAllSections", std::regex_constants::icase)))
 			{
 				db->ListAllSections();
+			}
+			else if(std::regex_search(input, matched, std::regex("ListSubsections", std::regex_constants::icase)))
+			{
+				std::string subsectionName = matched.suffix();
+				db->ListSubsections(subsectionName);
+			}
+			else if (std::regex_search(input, matched, std::regex("ListNamedSection", std::regex_constants::icase)))
+			{
+				std::string sectionName = matched.suffix();
+				db->ListNamedSection(sectionName);
+			}
+			else if (std::regex_search(input, matched, std::regex("ListKeyValuePairsInSection", std::regex_constants::icase)))
+			{
+				std::string sectionName = matched.suffix();
+				db->ListKeyValuePairsInSection(sectionName);
+			}
+			else if (std::regex_search(input, matched, std::regex("GetEntry", std::regex_constants::icase)))
+			{
+				std::string sectionNameAndKey = matched.suffix();
+				if (std::regex_search(sectionNameAndKey, matched, std::regex(",")))
+				{
+					std::string section = matched.prefix();
+					std::string key = matched.suffix();
+					db->GetEntry(section, key);
+				}
+			}
+			else if (std::regex_search(input, matched, std::regex("GetKey", std::regex_constants::icase)))
+			{
+				db->GetKey();
+			}
+			else if (std::regex_search(input, matched, std::regex("GetValue", std::regex_constants::icase)))
+			{
+				db->GetValue();
+			}
+			else if (std::regex_search(input, matched, std::regex("GetType", std::regex_constants::icase)))
+			{
+				db->GetType();
 			}
 			else
 			{
 				std::cout << "Your command was invalid. Please try again" << std::endl;
 			}
+			std::cout << "Please Enter Command: ";
 		}
     }
 	delete consoleManager;
