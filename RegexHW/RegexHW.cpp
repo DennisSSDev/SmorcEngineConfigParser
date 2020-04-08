@@ -556,6 +556,7 @@ int main()
 		std::smatch matched;
 		while(getline(std::cin, input)) 
 		{
+			input.erase(std::remove_if(input.begin(), input.end(), isspace), input.end());
 			if(input == "exit") 
 			{
 				SetConsoleTextAttribute(hConsole, CONSOLE_COLOR_SUCCESS);
@@ -563,8 +564,7 @@ int main()
 				SetConsoleTextAttribute(hConsole, CONSOLE_COLOR_DEFAULT);
 				break;
 			}
-			input.erase(std::remove_if(input.begin(), input.end(), isspace), input.end());
-			if (std::regex_search(input, matched, std::regex("ListAllSections", std::regex_constants::icase)))
+			else if (std::regex_search(input, matched, std::regex("ListAllSections", std::regex_constants::icase)))
 			{
 				db->ListAllSections();
 			}
@@ -591,6 +591,10 @@ int main()
 					std::string section = matched.prefix();
 					std::string key = matched.suffix();
 					db->GetEntry(section, key);
+				}
+				else 
+				{
+					std::cout << "The values you entered for command \"GetEntry\" were not comma separated" << std::endl;
 				}
 			}
 			else if (std::regex_search(input, matched, std::regex("GetKey", std::regex_constants::icase)))
